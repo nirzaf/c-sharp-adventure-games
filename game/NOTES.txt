@@ -1,26 +1,7 @@
 ﻿----------------------------------------------
  BIFF :  Bitwise Interactive Fiction Framework 
 ----------------------------------------------
- Copyright (c) Huw Collingbourne
 
- This game is based on the adventure game framework created by Huw Collingbourne
- This code may be used 'as is' or modified to create new games as long
- as this copyright notice and website links are included.
- http://www.bitwisebooks.com
- http://www.bitwisecourses.com
-
- This code is an extension of the C# adventure game systems described in the
- books:
- 
- The Little Book of Adventure Game Programming in C#
- Amazon (US) https://amzn.to/33M6sQ4
- Amazon (UK) https://amzn.to/2YtaBrj
-
- The Little Java Book of Adventure Game Programming
- Amazon (US) https://amzn.to/3gizI93
- Amazon (UK) https://amzn.to/3mydF0e
-
- --------------------------------------
                 NOTES
  --------------------------------------
  TIP: To simulate the entry of a sequence of commands that will try out a variety
