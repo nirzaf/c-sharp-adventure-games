@@ -1,0 +1,310 @@
+﻿----------------------------------------------
+ BIFF :  Bitwise Interactive Fiction Framework 
+----------------------------------------------
+ Copyright (c) Huw Collingbourne
+
+ This game is based on the adventure game framework created by Huw Collingbourne
+ This code may be used 'as is' or modified to create new games as long
+ as this copyright notice and website links are included.
+ http://www.bitwisebooks.com
+ http://www.bitwisecourses.com
+
+ This code is an extension of the C# adventure game systems described in the
+ books:
+ 
+ The Little Book of Adventure Game Programming in C#
+ Amazon (US) https://amzn.to/33M6sQ4
+ Amazon (UK) https://amzn.to/2YtaBrj
+
+ The Little Java Book of Adventure Game Programming
+ Amazon (US) https://amzn.to/3gizI93
+ Amazon (UK) https://amzn.to/3mydF0e
+
+ --------------------------------------
+                NOTES
+ --------------------------------------
+ TIP: To simulate the entry of a sequence of commands that will try out a variety
+ of features of this game, run the program and enter the command:
+
+     test
+
+ --------------------------------------
+ (game1.1d) (June 2021)
+ --------------------------------------
+The major addition to this release is the ability to create interactive characters that
+can move around the map of the game and to which commands can be sent. To give a command
+to a character, you enter the character's name followed by the command:
+ 
+    <character name> <command>
+
+A character is identified in the same way as any other game object, using either its name
+(a noun) alone or one or more adjectives followed by its name. So, if the gold robot is the
+only robot in the current location and the gold coin is the only coin, you can enter:
+
+    robot take coin
+
+But if there is a gold robot, a silver robot, a gold coin and a silver coin, you would
+need to tell the game which robot you are talking to and which coin you want it to take,
+like this:
+    
+    gold robot take silver coin
+
+
+InteractiveActor class
+----------------------
+   This new class is a descendent of Actor. In previous versions of the game the only 
+   Actor object was the player. The Actor class implements behaviour to interact with
+   the game - to move, take, drop, put objects into contains and so on. The new
+   InteractiveActor class inherits that behaviour so that characters within the
+   world of the game can perform all these actions too.
+
+activeActor 
+----------------------
+   This is the actor object to which commands are sent. By default it is the player
+   But if an InteractiveActor object is specified, then it will be that actor.
+   The activeActor is determined when the command is parsed. If the command
+   identifies an InteractiveActor in the current location, that will be the
+   actor object. e.g.
+
+        gold robot take sack
+
+  If the gold robot object is in the current room, it is now the activeActor and
+  the command "take sack" will be passed to it. 
+
+  activeActor is assigned in Adventure.parser.cs by the method: IsInteractiveActor()
+  which is called from ProcessCommand()
+
+  In previous releases of BIFF, all the command processing methods in Adventure.parser.cs
+  invoked methods of the player object (as that was then the only Actor object in the game).
+  Now, the methods may be invoked on either the player (an Actor object) or on a game
+  'character' (an InteractiveActor object). So, for example, when the "take" command
+  is entered, the Take() method of the curently active actor object is invoked. This
+  may be either the player or some game character. e.g. You'll find this code in the 
+  ProcessVerbNounPhrase() method:
+
+  s = activeActor.Take(np);
+
+
+  Minor Changes
+  ----------------------
+  - TFN
+  This enum is declared in AdvConsts.cs
+
+    public enum TFN { // three-state alternative to bool
+        TRUE,
+        FALSE,
+        NOTFOUND
+    }
+
+    This is useful as a sort of 'extended boolean' when I want a method to return one
+    of three (rather than two) possible values. Using Visual Studio to 'Find all references'
+    of TFN to see how it is used.
+
+  - Location
+    An Actor object's Location property is its Container when that Container is a Room.
+    If the Container is not a Room (if the Actor has been collected by the player, say,
+    or if it has been put into a Sack or Treasure Chest) then Location is null. If
+    you allow InteractiveActor objects to be taken, you need to take care that you always
+    test if Location is null before telling a character to do something that assumes it is
+    contained by a Room (e.g. Describe the Room, Go north etc.) I have tried to deal with
+    the most obvious possible errors that might occur in such cases but this is not
+    fully tested and debugged. The simplest solution is to make sure that an InteractiveActor
+    cannot be taken (its Takable property is set to False). This is the default. If you allow
+    such an object to be taken, you will need to check carefully that your code makes no
+    assumptions that its Location is a Room object.
+
+- Pronouns and Verbs
+  Each Actor object now defines its pronouns ("you" or "I") and the conjugation of the
+  verb "to be". The defaults are "You" and "are" for the Actor (player) object and "I"
+  and "am" for InteractiveActor objects. These allow better messages such as:
+
+  "You are in the Cave" (the player)
+  "I am in the Cave" (some character)
+
+ --------------------------------------
+ (beta) 1.1c (May 2021)
+ --------------------------------------
+ The Java book and code mentioned above were both written after the C# book.
+ The Java version (with the book) includes additional features that were not found 
+ in the C# version. In THIS release of BIFF, I have added all those additional features 
+ to the C# code. So in this version of BIFF for C# now has the equivalent feature-set 
+ of the Java release of BIFF.
+
+ Be aware this is beta software and it has not been fully tested or debugged.
+ It is quite likely to contain errors or mistakes. In addition, the new
+ features are not fully documented and the in-code comments are fairly
+ brief.
+
+ Changes to C# code (as supplied for the book)
+ ---- Major new features ----
+
+ Adjective matching is implemented 
+      parsed adjectives are compared with an optional list of adjectives
+      stored in Thing objects so there might be three small rings, say,
+      brass, gold and silver. If the player enters "take small ring"
+      the game will ask whether the "small gold ring", the "small brass ring"
+      or the "small silver ring" is intended.
+
+ Mass is associated with each object. 
+      Here mass can be thought of as the combination of size and weight
+      so that the player can only carry items up to a certain total
+      mass. The mass of items is calculated recursively when things are in other
+      things (so player can't try to carry more items by placing high-mass 
+      items into a low-mass container and then carrying the container).
+
+ The Thing hierarchy is extended
+      Descendents include generic things (non-interactive scenery such as trees,
+      walls, dust etc.) and lockable things. A lockable thing can be opened using
+      a designated object (e.g. a specific key object). The most basic class of the 
+      hirerarchy is BaseThing, which is just an object with a name and a description
+      but the first 'usable' game class (for simple treasures) is Thing.
+
+---- Other Changes ----
+
+ - Containers
+ In earlier versions, references to the container in which a Thing was found were
+ stored using a list implemented by a class called ThingAndThingHolder. As the
+ codebase grew, this became unweildly and so that class has been removed. Now
+ each Thing object has a Container field to store a reference to the container
+ (a ContainerThing object or a Room) which is updated when the object is 
+ taken, dropped, put into or taken out of a container.
+
+ - The Map
+ The map is implemented as a dictionary (a RoomList) of <Rm, Room> where Rm
+ is a constant (in an enum) defining a room and Room is a Room object.
+
+ - The Treasures
+ The objects (Thing and descendents) are stored in a dictionary of <Ob, Thing>
+ where Ob is a constant (in an enum) defining an Object and Thing is a Thing object.
+
+ - Parsing
+ A second-level of parsing has been added. As before the string entered
+ by the player (e.g. "take ring") is parsed into a List of strings: List<string>
+ This List is now processed to identify "grammar units". A grammar unit may
+ comprise a single word such as a verb ("take") or a more complex Noun-phrase
+ which may optionally include one or more adjectives plus a noun ("big gold ring")
+ The parsing routines can be found in Adventure.parser.cs The routines that
+ construct the list of Grammar units are found in SentenceAnalyzer.cs
+
+ - SentenceAnalyzer
+ In order to analyze a List of strings and create from it a list of grammar units
+ you must pass the list of strings to the SentenceAnalyzer constructor and then
+ call the Analyze() method:
+    analyzer = new SentenceAnalyzer(command);
+    grammarunits = analyzer.Analyze();
+ This is done in the ProcessCommand() method in Adventure.parser.cs
+
+ - Process (parsing) methods
+ The parsing methods such as ProcessVerbNounPhrase() and other similar methods
+ in Adventure.parser.cs now act on a list of GrammarUnit objects
+
+ - GrammarUnit classes
+ The GrammarUnit class is the basis for specific grammar units. From it descend
+ the Verb, Preposition and NounPhrase classes. Of these NounPhrase is the
+ most complex class as it may comprise multiple words - one noun plus zero
+ or more adjectives.
+
+  --------------------------------------
+     Special Actions
+  --------------------------------------
+    Each 'action' such as 'take' or 'put X into Y' has a default behaviour
+    which is coded in the Actor class. But in some cases, you may want to
+    implement special behaviour. For example, in my sample game when the
+    coin is put into the slot, the sign alongside the slot and lever
+    changes, the lever state becomes ACTIVATED and the coin is removed
+    from the game. This is coded in the following method in Actions.cs:
+
+    public static string PutIntoSpecial(Thing t, ContainerThing container) {
+        string s = "";
+
+        if ((t == GameData.Obs[Ob.Coin]) && (container == GameData.Obs[Ob.Slot])) {
+            s = "The sound of turning cogwheels can be heard deep inside the wall\n"
+                + "The sign flickers and some next text appears on it";
+            GameData.Obs[Ob.SignCoinOperated].Description = "The sign says: 'Coin operated (Pull lever to activate)'";
+            GameData.Obs[Ob.Lever].ObState = State.ACTIVATED;
+            t.Container.Remove(t);
+        }
+        return s;
+    }
+
+    Note how I have loctated specific objects using their keys such as Ob.Coin into
+    the Obs dictionary. You can find a few other special actions in the Actions.cs file.
+    When a special action is defined, its method returns a string. If no special 
+    action is defined, the string is empty and the default ection executes. This is an 
+    example of how the returned string is tested in the PutInto() method of
+    the Actor class:
+
+    s = Actions.PutIntoSpecial(t, container);
+    if (s == "") {
+        DoPutInto(t, t.Container, container);
+        s = "You put the " + np.Phrase() + " into the " + np2.Phrase() + ".";
+    }
+
+    I have not yet added thgis test to all the actions defined in Actor. If you need
+    special actions, see how I have added this test in PutInto(), Pull() and Drop()
+    and be sure to add a similar test (and a call to a special Actions method). For
+    example, try adding a special action to the Open() method - so that something
+    special happens when the chest is opened (say) but not when other containers
+    are opened.
+
+  --------------------------------------
+     Game Data - How To Create a Game
+  --------------------------------------
+  Most of the classes and code can be used to create ANY text adventure game. I
+  have deliberately kept the classes and methods specific to my game separate
+  from all other code. That means that when you want to create a game of your own
+  it will be fairly easy to do so simply by adding the data for your rooms and
+  treasures and writing a very small number of special 'actions' that you want to
+  take when, for example, the player needs to solve a puzzle.
+
+  When you create your own game, this is what you need to do:
+  --- Add data for the game in the data namespace ---
+
+  1) RoomIDs.cs
+  Define enum constants to identify each Room in the Rm enum
+
+  2) ObjectIDs.cs
+  Define enum constants to identify each game object in the Ob enum
+
+  3) VocabularyData.cs
+  Add any words your game needs to understand in the InitVocab() method
+  Each takes the form of a string and a WT constant (see WT.cs) such as:
+   vocab.Add("acorn", WT.NOUN);
+   vocab.Add("take", WT.VERB);
+
+  4)  GameData.cs
+  Modify the InitGame() method to add data items in this order (you must do this
+  in the correct order to ensure that objects are created before they are added
+  to containers or to rooms):
+
+  NOTE: Use the supplied code as a model for creating and adding your own
+  vocabulary, room and object data.
+
+  ---------
+  Debugging
+  ---------
+  To get a better understanding of how the code works, be sure to use the
+  Visual Studio debugger to sety breakpoints and evaluate variables. In addition,
+  you can conditionally compile and run debugging code by placing that code
+  between #if DEBUG and #endif directives. This is en example from the Actor.cs
+  code unit:
+
+#if DEBUG
+    ct = ToContainerThing(t);
+    s += DebugTakeDrop(t, tmass, ct != null);
+#endif
+
+   To execute these debug blocks, set the project configuration to Debug by
+   selecting Debug in the drop-down selection box at the top of Visual Studio.
+   Set the configuration to Release to omit the debug blocks.
+
+   ---------
+   Testing
+   ---------
+   I have also included a test() function in Adventure.cs so that you can
+   run code to execute a series of commands without having to enter them
+   one by one or to evaluate and display data on game objects. I have
+   included a sample game walkthrough to show how you can use test().
+
+   To run the test() function enter the command "test" when you
+   are running the game.
